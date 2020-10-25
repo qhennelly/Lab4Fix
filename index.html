@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Lab 4</title>
+
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+        integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+        crossorigin=""/>
+
+        <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+        integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+        crossorigin=""></script>
+
+        <style type="text/css">
+          html, body { margin: 0; padding: 0; height: 100%; }
+          #map { min-height: 100%; }
+        </style>
+        <script type="text/javascript" src= "colorado.js"></script>
+          <script type="text/javascript" src= "PopDen1.js"></script>
+
+    </head>
+
+    <body>
+        <div id="map"></div>
+
+        <script type="text/javascript">
+
+          var map = L.map('map', {
+            center: [39,-105.78],
+            zoom: 7
+          });
+
+         L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
+           attribution: 'Map tiles by Carto, under CC BY 3.0. Data by OpenStreetMap, under ODbL.',
+           maxZoom: 11,
+           minZoom: 5
+         }).addTo(map);
+
+         var canvas = L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
+            attribution: 'Map tiles by Carto, under CC BY 3.0. Data by OpenStreetMap, under ODbL.',
+            maxZoom: 11,
+            minZoom: 5
+          }).addTo(map);
+
+          var imagery = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+            attribution: 'Map data © OpenStreetMap contributors, CC-BY-SA, Imagery © Mapbox',
+            maxZoom: 11,
+            minZoom: 5,
+            id: 'mapbox.satellite',
+            accessToken:'pk.eyJ1IjoicWhlbm5lbGx5IiwiYSI6ImNrZzVvcnRjYTB3ZzEyd25ubGVqZGRiOHQifQ.Y18gGcPsslQ_ARZHv2yQQA'
+          });
+
+          map.on('overlayremove', function(eventLayer){
+            if (eventLayer.name == 'colorado'){
+              map.removeControl(legend);
+            }
+          });
+
+          map.on('overlayadd', function(eventLayer){
+            if (eventLayer.name == 'PopDen1'){
+              legend.addTo(map);
+            }
+          });
+
+          var Colorado = L.geoJson(colorado, {style:style}).addTo(map);
+          function getColor(value) {
+              return value > 15869  ? '#006d2c':
+                     value > 8745  ? '#31a354':
+                     value > 4462  ? '#74c476':
+                     value > 2846  ? '#bae4b3':
+                                   '#edf8e9';}
+         function style(feature){
+             return {
+                     fillColor: getColor(feature.properties.Population),
+                     weight: 2,
+                     opacity: 1,
+                     color: 'gray',
+                     fillOpacity: 0.9,
+                     dashArray: 5
+                   };}
+
+          geojson = L.geoJson(Popden1, {style:style,
+                    }).bindPopup(function (layer){
+            return layer.feature.properties.NAME
+         + '<p style="color:green">' + layer.feature.properties.colorado.toString() + ' people/hectare </p>';
+                            }).addTo(map);
+
+            var legend = L.control({position: 'bottomright'});
+
+              legend.onAdd = function (map) {
+
+                    var div = L.DomUtil.create('div', 'legend'),
+                        grades = [0,2846, 6222, 8745, 15869];
+
+                    div.innerHTML = '<b>Population Density <br> 2011 <br></b>';
+
+                    for (var i = 0; i < grades.length; i++) {
+                        div.innerHTML +=
+                        '<i style="background:' + getColor(grades[i] + 1) + '"></i>' +
+                        grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+                    }
+                    return div;
+                };
+            legend.addTo(map);
+
+            var basemaps = {
+                  "Light Canvas": canvas,
+                  "Satellite Imagery": imagery
+                    };
+            var overlaymaps = {
+              "Colorado": Colorado,
+              "PopDen1": geoJson
+                    };
+
+           L.control.layers(basemaps, overlaymaps).addTo(map);
+
+        </script>
+
+   </body>
+</html>
